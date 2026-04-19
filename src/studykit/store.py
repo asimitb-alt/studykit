@@ -45,6 +45,11 @@ class Store:
     # ------------------------------------------------------------------
 
     def add_course(self, name, credits=3, semester=""):
+        name = name.strip()
+        if not name:
+            raise ValueError("Course name cannot be empty.")
+        if credits < 0:
+            raise ValueError("Credits cannot be negative.")
         for c in self._data["courses"]:
             if c["name"].lower() == name.lower():
                 raise ValueError(f"Course '{name}' already exists.")
@@ -87,6 +92,9 @@ class Store:
             )
 
     def add_deadline(self, name, course, due, priority="medium"):
+        name = name.strip()
+        if not name:
+            raise ValueError("Deadline name cannot be empty.")
         self._require_course(course)
         if any(
             d["name"].lower() == name.lower() and d["course"].lower() == course.lower()
@@ -134,6 +142,10 @@ class Store:
     # ------------------------------------------------------------------
 
     def add_grade(self, course, assignment, score, max_score, weight=1.0, category=""):
+        if score < 0:
+            raise ValueError("Score cannot be negative.")
+        if score > max_score:
+            raise ValueError(f"Score ({score}) cannot exceed max score ({max_score}).")
         self._require_course(course)
         if any(
             g["course"].lower() == course.lower() and g["assignment"].lower() == assignment.lower()
@@ -162,6 +174,9 @@ class Store:
     # ------------------------------------------------------------------
 
     def add_note(self, text, course, tags=None):
+        text = text.strip()
+        if not text:
+            raise ValueError("Note text cannot be empty.")
         self._require_course(course)
         if any(
             n["text"].lower() == text.lower() and n["course"].lower() == course.lower()

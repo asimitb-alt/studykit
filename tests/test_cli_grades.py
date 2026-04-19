@@ -54,12 +54,30 @@ def test_grade_same_assignment_different_course_allowed(runner, data_path):
     assert result.exit_code == 0
 
 
+def test_grade_add_score_exceeds_max(runner, data_path):
+    _add_course(runner, data_path)
+    result = runner.invoke(main, [
+        "--data", data_path, "grade", "add", "CS101", "HW1", "110", "100"
+    ])
+    assert result.exit_code != 0
+
+
+def test_grade_predict_target_over_100(runner, data_path):
+    _add_course(runner, data_path)
+    runner.invoke(main, ["--data", data_path, "grade", "add", "CS101", "HW1", "80", "100"])
+    result = runner.invoke(main, [
+        "--data", data_path, "grade", "predict", "CS101",
+        "--target", "150", "--remaining", "1.0"
+    ])
+    assert result.exit_code != 0
+
+
 def test_grade_add_invalid_max(runner, data_path):
     _add_course(runner, data_path)
     result = runner.invoke(main, [
         "--data", data_path, "grade", "add", "CS101", "HW1", "90", "0"
     ])
-    assert result.exit_code == 1
+    assert result.exit_code != 0
 
 
 # ---------------------------------------------------------------------------
@@ -140,4 +158,4 @@ def test_grade_predict_zero_remaining(runner, data_path):
         "--data", data_path, "grade", "predict", "CS101",
         "--target", "90", "--remaining", "0"
     ])
-    assert result.exit_code == 1
+    assert result.exit_code != 0

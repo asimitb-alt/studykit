@@ -75,6 +75,16 @@ def test_remove_course_missing_raises(store):
         store.remove_course("NONEXISTENT")
 
 
+def test_add_course_empty_name_raises(store):
+    with pytest.raises(ValueError, match="empty"):
+        store.add_course("   ")
+
+
+def test_add_course_negative_credits_raises(store):
+    with pytest.raises(ValueError, match="negative"):
+        store.add_course("CS101", credits=-1)
+
+
 # ---------------------------------------------------------------------------
 # Deadlines
 # ---------------------------------------------------------------------------
@@ -88,6 +98,12 @@ def test_add_deadline(store):
     assert d["priority"] == "high"
     assert d["done"] is False
     assert "id" in d
+
+
+def test_add_deadline_empty_name_raises(store):
+    _add_cs101(store)
+    with pytest.raises(ValueError, match="empty"):
+        store.add_deadline("   ", "CS101", "2099-12-01")
 
 
 def test_deadline_unknown_course_raises(store):
@@ -139,6 +155,18 @@ def test_add_grade(store):
     assert g["category"] == "exam"
 
 
+def test_add_grade_negative_score_raises(store):
+    _add_cs101(store)
+    with pytest.raises(ValueError, match="negative"):
+        store.add_grade("CS101", "HW1", -5, 100)
+
+
+def test_add_grade_score_exceeds_max_raises(store):
+    _add_cs101(store)
+    with pytest.raises(ValueError, match="exceed"):
+        store.add_grade("CS101", "HW1", 110, 100)
+
+
 def test_grade_unknown_course_raises(store):
     with pytest.raises(ValueError, match="not found"):
         store.add_grade("UNKNOWN101", "Midterm", 85, 100)
@@ -179,6 +207,12 @@ def test_add_note(store):
     assert n["course"] == "CS101"
     assert "lambda" in n["tags"]
     assert "id" in n
+
+
+def test_add_note_empty_text_raises(store):
+    _add_cs101(store)
+    with pytest.raises(ValueError, match="empty"):
+        store.add_note("   ", "CS101")
 
 
 def test_note_unknown_course_raises(store):

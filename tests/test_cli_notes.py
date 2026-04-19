@@ -23,6 +23,14 @@ def test_note_add(runner, data_path):
     assert "Added note" in result.output
 
 
+def test_note_add_empty_text(runner, data_path):
+    _add_course(runner, data_path)
+    result = runner.invoke(main, [
+        "--data", data_path, "note", "add", "   ", "--course", "CS101"
+    ])
+    assert result.exit_code != 0
+
+
 def test_note_add_unknown_course(runner, data_path):
     result = runner.invoke(main, [
         "--data", data_path, "note", "add", "Some note",

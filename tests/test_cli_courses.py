@@ -11,6 +11,16 @@ def test_course_add(runner, data_path):
     assert "CS101" in result.output
 
 
+def test_course_add_empty_name(runner, data_path):
+    result = runner.invoke(main, ["--data", data_path, "course", "add", "   "])
+    assert result.exit_code != 0
+
+
+def test_course_add_negative_credits(runner, data_path):
+    result = runner.invoke(main, ["--data", data_path, "course", "add", "CS101", "--credits", "-1"])
+    assert result.exit_code != 0
+
+
 def test_course_add_duplicate(runner, data_path):
     runner.invoke(main, ["--data", data_path, "course", "add", "CS101"])
     result = runner.invoke(main, ["--data", data_path, "course", "add", "CS101"])

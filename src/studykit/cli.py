@@ -146,7 +146,7 @@ def course(ctx):
 
 @course.command("add")
 @click.argument("name")
-@click.option("--credits", "credits_val", default=3, type=int, show_default=True, help="Credit hours.")
+@click.option("--credits", "credits_val", default=3, type=click.IntRange(min=0), show_default=True, help="Credit hours (0 or more).")
 @click.option("--semester", default="", help="Semester (e.g. 'Fall 2025').")
 @click.pass_context
 def course_add(ctx, name, credits_val, semester):
@@ -371,16 +371,14 @@ def grade(ctx):
 @grade.command("add")
 @click.argument("course_name")
 @click.argument("assignment")
-@click.argument("score", type=float)
-@click.argument("max_score", type=float)
-@click.option("--weight", "-w", default=1.0, type=float, show_default=True, help="Assignment weight.")
+@click.argument("score", type=click.FloatRange(min=0))
+@click.argument("max_score", type=click.FloatRange(min=0.01))
+@click.option("--weight", "-w", default=1.0, type=click.FloatRange(min=0.01), show_default=True, help="Assignment weight (must be positive).")
 @click.option("--category", "-cat", default="", help="Category (e.g. homework, exam).")
 @click.pass_context
 def grade_add(ctx, course_name, assignment, score, max_score, category, weight):
     """Add a grade entry."""
     store = _get_store(ctx)
-    if max_score <= 0:
-        _error("max_score must be positive.")
     try:
         g = store.add_grade(course_name, assignment, score, max_score, weight=weight, category=category)
     except ValueError as e:
@@ -492,8 +490,8 @@ def grade_gpa(ctx):
 
 @grade.command("predict")
 @click.argument("course_name")
-@click.option("--target", "-t", required=True, type=float, help="Target percentage (e.g. 90).")
-@click.option("--remaining", "-r", required=True, type=float, help="Remaining weight of work.")
+@click.option("--target", "-t", required=True, type=click.FloatRange(min=0, max=100), help="Target percentage 0–100.")
+@click.option("--remaining", "-r", required=True, type=click.FloatRange(min=0.01), help="Remaining weight of work (must be positive).")
 @click.pass_context
 def grade_predict(ctx, course_name, target, remaining):
     """Predict score needed on remaining work to hit target."""
