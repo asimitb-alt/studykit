@@ -4,12 +4,31 @@ import pytest
 from studykit.store import Store
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _add_cs101(store):
+    store.add_course("CS101", credits=3, semester="Fall 2025")
+
+def _add_math201(store):
+    store.add_course("MATH201", credits=4, semester="Fall 2025")
+
+
+# ---------------------------------------------------------------------------
+# Store creation
+# ---------------------------------------------------------------------------
+
 def test_store_creates_empty(store):
     assert store.get_courses() == []
     assert store.get_deadlines() == []
     assert store.get_grades() == []
     assert store.get_notes() == []
 
+
+# ---------------------------------------------------------------------------
+# Courses
+# ---------------------------------------------------------------------------
 
 def test_add_course(store):
     c = store.add_course("CS101", credits=3, semester="Fall 2025")
@@ -56,7 +75,12 @@ def test_remove_course_missing_raises(store):
         store.remove_course("NONEXISTENT")
 
 
+# ---------------------------------------------------------------------------
+# Deadlines
+# ---------------------------------------------------------------------------
+
 def test_add_deadline(store):
+    _add_cs101(store)
     d = store.add_deadline("HW1", "CS101", "2099-12-01", "high")
     assert d["name"] == "HW1"
     assert d["course"] == "CS101"
@@ -66,20 +90,46 @@ def test_add_deadline(store):
     assert "id" in d
 
 
+def test_deadline_unknown_course_raises(store):
+    with pytest.raises(ValueError, match="not found"):
+        store.add_deadline("HW1", "UNKNOWN101", "2099-12-01", "high")
+
+
+def test_deadline_duplicate_raises(store):
+    _add_cs101(store)
+    store.add_deadline("HW1", "CS101", "2099-12-01", "high")
+    with pytest.raises(ValueError, match="already exists"):
+        store.add_deadline("HW1", "CS101", "2099-12-05", "low")
+
+
+def test_deadline_same_name_different_course_allowed(store):
+    _add_cs101(store)
+    _add_math201(store)
+    store.add_deadline("HW1", "CS101", "2099-12-01", "high")
+    d = store.add_deadline("HW1", "MATH201", "2099-12-01", "medium")
+    assert d["course"] == "MATH201"
+
+
 def test_mark_done(store):
+    _add_cs101(store)
     d = store.add_deadline("HW1", "CS101", "2099-12-01", "high")
-    id_prefix = d["id"][:4]
-    updated = store.mark_done(id_prefix)
+    updated = store.mark_done(d["id"][:4])
     assert updated["done"] is True
 
 
 def test_delete_deadline(store):
+    _add_cs101(store)
     d = store.add_deadline("HW1", "CS101", "2099-12-01", "high")
     store.delete_deadline(d["id"][:4])
     assert store.get_deadlines() == []
 
 
+# ---------------------------------------------------------------------------
+# Grades
+# ---------------------------------------------------------------------------
+
 def test_add_grade(store):
+    _add_cs101(store)
     g = store.add_grade("CS101", "Midterm", 85, 100, weight=2.0, category="exam")
     assert g["course"] == "CS101"
     assert g["assignment"] == "Midterm"
@@ -89,14 +139,41 @@ def test_add_grade(store):
     assert g["category"] == "exam"
 
 
+def test_grade_unknown_course_raises(store):
+    with pytest.raises(ValueError, match="not found"):
+        store.add_grade("UNKNOWN101", "Midterm", 85, 100)
+
+
+def test_grade_duplicate_raises(store):
+    _add_cs101(store)
+    store.add_grade("CS101", "Midterm", 85, 100)
+    with pytest.raises(ValueError, match="already exists"):
+        store.add_grade("CS101", "Midterm", 90, 100)
+
+
+def test_grade_same_assignment_different_course_allowed(store):
+    _add_cs101(store)
+    _add_math201(store)
+    store.add_grade("CS101", "Midterm", 85, 100)
+    g = store.add_grade("MATH201", "Midterm", 78, 100)
+    assert g["course"] == "MATH201"
+
+
 def test_get_grades(store):
+    _add_cs101(store)
+    _add_math201(store)
     store.add_grade("CS101", "HW1", 90, 100)
     store.add_grade("MATH201", "Quiz", 70, 100)
     grades = store.get_grades()
     assert len(grades) == 2
 
 
+# ---------------------------------------------------------------------------
+# Notes
+# ---------------------------------------------------------------------------
+
 def test_add_note(store):
+    _add_cs101(store)
     n = store.add_note("Lambda functions in Python", "CS101", ["lambda", "functional"])
     assert n["text"] == "Lambda functions in Python"
     assert n["course"] == "CS101"
@@ -104,11 +181,36 @@ def test_add_note(store):
     assert "id" in n
 
 
+def test_note_unknown_course_raises(store):
+    with pytest.raises(ValueError, match="not found"):
+        store.add_note("Some note", "UNKNOWN101", [])
+
+
+def test_note_duplicate_raises(store):
+    _add_cs101(store)
+    store.add_note("Same text", "CS101", [])
+    with pytest.raises(ValueError, match="already exists"):
+        store.add_note("Same text", "CS101", ["different", "tags"])
+
+
+def test_note_same_text_different_course_allowed(store):
+    _add_cs101(store)
+    _add_math201(store)
+    store.add_note("Study harder", "CS101", [])
+    n = store.add_note("Study harder", "MATH201", [])
+    assert n["course"] == "MATH201"
+
+
 def test_delete_note(store):
+    _add_cs101(store)
     n = store.add_note("Some note", "CS101", [])
     store.delete_note(n["id"][:4])
     assert store.get_notes() == []
 
+
+# ---------------------------------------------------------------------------
+# Misc
+# ---------------------------------------------------------------------------
 
 def test_new_id_length(store):
     id1 = store.new_id()

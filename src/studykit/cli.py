@@ -268,7 +268,10 @@ def deadline_add(ctx, name, course, due, priority):
         date.fromisoformat(due)
     except ValueError:
         _error("Invalid date format. Use YYYY-MM-DD.")
-    d = store.add_deadline(name, course, due, priority)
+    try:
+        d = store.add_deadline(name, course, due, priority)
+    except ValueError as e:
+        _error(str(e))
     console.print(f"[green]Added deadline:[/green] [{d['id']}] {name} for {course}, due {due} ({priority})")
 
 
@@ -378,7 +381,10 @@ def grade_add(ctx, course_name, assignment, score, max_score, category, weight):
     store = _get_store(ctx)
     if max_score <= 0:
         _error("max_score must be positive.")
-    g = store.add_grade(course_name, assignment, score, max_score, weight=weight, category=category)
+    try:
+        g = store.add_grade(course_name, assignment, score, max_score, weight=weight, category=category)
+    except ValueError as e:
+        _error(str(e))
     p = pct(score, max_score)
     letter = letter_grade(p)
     console.print(f"[green]Added grade:[/green] {assignment} for {course_name}: {score}/{max_score} = {p:.1f}% ({letter})")
@@ -531,7 +537,10 @@ def note_add(ctx, text, course, tags):
     """Add a note."""
     store = _get_store(ctx)
     tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
-    n = store.add_note(text, course, tags=tag_list)
+    try:
+        n = store.add_note(text, course, tags=tag_list)
+    except ValueError as e:
+        _error(str(e))
     console.print(f"[green]Added note:[/green] [{n['id']}] for {course}")
 
 

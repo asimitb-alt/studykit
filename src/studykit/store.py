@@ -78,7 +78,21 @@ class Store:
     # Deadlines
     # ------------------------------------------------------------------
 
+    def _require_course(self, course):
+        """Raise ValueError if course is not registered."""
+        if not any(c["name"].lower() == course.lower() for c in self._data["courses"]):
+            raise ValueError(
+                f"Course '{course}' not found. "
+                f"Add it first with: studykit course add \"{course}\""
+            )
+
     def add_deadline(self, name, course, due, priority="medium"):
+        self._require_course(course)
+        if any(
+            d["name"].lower() == name.lower() and d["course"].lower() == course.lower()
+            for d in self._data["deadlines"]
+        ):
+            raise ValueError(f"Deadline '{name}' already exists for course '{course}'.")
         deadline = {
             "id": self.new_id(),
             "name": name,
@@ -120,6 +134,12 @@ class Store:
     # ------------------------------------------------------------------
 
     def add_grade(self, course, assignment, score, max_score, weight=1.0, category=""):
+        self._require_course(course)
+        if any(
+            g["course"].lower() == course.lower() and g["assignment"].lower() == assignment.lower()
+            for g in self._data["grades"]
+        ):
+            raise ValueError(f"Grade for '{assignment}' already exists in course '{course}'.")
         grade = {
             "id": self.new_id(),
             "course": course,
@@ -142,6 +162,12 @@ class Store:
     # ------------------------------------------------------------------
 
     def add_note(self, text, course, tags=None):
+        self._require_course(course)
+        if any(
+            n["text"].lower() == text.lower() and n["course"].lower() == course.lower()
+            for n in self._data["notes"]
+        ):
+            raise ValueError(f"An identical note already exists for course '{course}'.")
         note = {
             "id": self.new_id(),
             "text": text,
